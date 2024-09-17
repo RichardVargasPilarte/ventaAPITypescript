@@ -1,0 +1,39 @@
+{
+  "name": "ventatypescript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node-dev --respawn --transpile-only --exit-child src/index.ts",
+    "migrate": "npx prisma migrate dev --name user-entity && npx prisma generate",
+    "push": "npx prisma db push",
+    "build": "tsc . -p"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "@types/cors": "^2.8.17",
+    "bcryptjs": "^2.4.3",
+    "config": "^3.3.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "express": "^4.21.0",
+    "express-validator": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "ts-node-dev": "^2.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/config": "^3.3.5",
+    "@types/express": "^4.17.21",
+    "@types/express-validator": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^22.5.4",
+    "@types/uuid": "^10.0.0",
+    "prisma": "^5.19.1",
+    "typescript": "^5.6.2"
+  }
+}

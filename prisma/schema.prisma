@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Articulo {
+  id           String   @id @default(uuid()) 
+  categoria_id String
+  categoria    Categoria @relation(fields: [categoria_id], references: [id])
+  codigo       String?   @db.VarChar(64)
+  nombre       String    @unique @db.VarChar(50)
+  descripcion  String?   @db.VarChar(255)
+  precio_venta Float
+  stock        Int
+  estado       Int       @default(1)
+  createdAt    DateTime  @default(now())
+  eliminado    String    @default("NO")
+
+  @@map("articulo")
+}
+
+model Categoria {
+  id          String   @id @default(uuid())
+  nombre      String   @unique @db.VarChar(50)
+  descripcion String?  @db.VarChar(255)
+  estado      Int      @default(1)
+  createdAt   DateTime @default(now())
+  eliminado   String    @default("NO")
+
+  @@map("categoria")
+  articulos   Articulo[] // Relación inversa con Articulo
+}
+
+model Usuario {
+  id              String   @id @default(uuid()) 
+  rol             String   @db.VarChar(30)   // Campo rol, con un máximo de 30 caracteres, requerido
+  nombre          String   @unique @db.VarChar(50) // Campo nombre, único, con un máximo de 50 caracteres, requerido
+  username        String   @unique @db.VarChar(30)
+  tipo_documento  String?  @db.VarChar(20)   // Campo opcional con un máximo de 20 caracteres
+  num_documento   String?  @db.VarChar(20)   // Campo opcional con un máximo de 20 caracteres
+  direccion       String?  @db.VarChar(70)   // Campo opcional con un máximo de 70 caracteres
+  telefono        String?  @db.VarChar(20)   // Campo opcional con un máximo de 20 caracteres
+  email           String   @unique @db.VarChar(50) // Campo email, único, con un máximo de 50 caracteres, requerido
+  password        String   @db.VarChar(64)   // Campo password con un máximo de 64 caracteres, requerido
+  estado          Int      @default(1)       // Campo estado con valor predeterminado de 1
+  createdAt       DateTime @default(now())   // Fecha de creación por defecto la actual
+  eliminado       String   @default("NO")
+
+  @@map("usuario") // Mapeo del modelo a la tabla 'usuario'
+  Ingreso Ingreso[] // Relación inversa con Ingreso
+  Venta Venta[]
+}
+
+// Modelo Persona se usa para diferenciar si es un cliente o un proveedor
+model Persona {
+  id             String   @id @default(uuid()) 
+  tipo_persona   String   @db.VarChar(20)   // Campo tipo_persona, requerido, con un máximo de 20 caracteres, se usa para saber si es un cliente o proveedor
+  nombre         String   @unique @db.VarChar(50)
+  tipo_documento String?  @db.VarChar(20)
+  num_documento  String?  @db.VarChar(20)
+  direccion      String?  @db.VarChar(70)
+  telefono       String?  @db.VarChar(20)
+  email          String?  @unique @db.VarChar(50)
+  estado         Int      @default(1)
+  createdAt      DateTime @default(now())
+  eliminado       String   @default("NO")
+
+  @@map("persona") // Mapeo del modelo a la tabla 'persona'
+  Ingreso Ingreso[] // Relación inversa con Ingreso
+  Venta Venta[]
+}
+
+model Ingreso {
+  id                String        @id @default(uuid())
+  usuarioId         String        // Llave foránea que referencia al usuario
+  usuario           Usuario       @relation(fields: [usuarioId], references: [id]) // Relación con Usuario
+  personaId         String        // Llave foránea que referencia a persona
+  persona           Persona       @relation(fields: [personaId], references: [id]) // Relación con Persona
+  tipo_comprobante  String        @db.VarChar(20)
+  serie_comprobante String?       @db.VarChar(7)
+  num_comprobante   String        @db.VarChar(10)
+  impuesto          Float
+  total             Float
+  detalles          DetalleIngreso[] // Relación uno a muchos con DetalleIngreso
+  estado            Int           @default(1)
+  createdAt         DateTime      @default(now())
+
+  @@map("ingreso") // Mapeo del modelo a la tabla 'ingreso'
+  @@index([createdAt]) // Agrega un índice en la columna 'createdAt'
+}
+
+model DetalleIngreso {
+  id        String  @id @default(uuid())
+  articulo  String  // ID o descripción del artículo
+  cantidad  Int
+  precio    Float
+  ingresoId String  // Llave foránea que referencia a Ingreso
+  ingreso   Ingreso @relation(fields: [ingresoId], references: [id]) // Relación inversa con Ingreso
+
+  @@map("detalle_ingreso") // Mapeo del modelo a la tabla 'detalle_ingreso'
+}
+
+model Venta {
+  id                String          @id @default(uuid())
+  usuarioId         String          // Llave foránea que referencia al modelo Usuario
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id]) // Relación con Usuario
+  personaId         String          // Llave foránea que referencia al modelo Persona
+  persona           Persona         @relation(fields: [personaId], references: [id]) // Relación con Persona
+  tipo_comprobante  String          @db.VarChar(20)
+  serie_comprobante String?         @db.VarChar(7)
+  num_comprobante   String          @db.VarChar(10)
+  impuesto          Float
+  total             Float
+  detalles          DetalleVenta[]  // Relación uno a muchos con DetalleVenta
+  estado            Int             @default(1)
+  createdAt         DateTime        @default(now())
+
+  @@map("venta") // Mapeo del modelo a la tabla 'venta'
+}
+
+model DetalleVenta {
+  id          String  @id @default(uuid())
+  articulo    String  @db.VarChar(255)
+  cantidad    Int
+  precio      Float
+  descuento   Float
+  ventaId     String                          // Llave foránea que referencia a Venta
+  venta       Venta                           @relation(fields: [ventaId], references: [id]) // Relación con Venta
+
+  @@map("detalle_venta") // Mapeo del modelo a la tabla 'detalle_venta'
+}
