@@ -110,15 +110,16 @@ export const actualizarUsuario = async (req: Request, res: Response, next: NextF
             return res.status(400).send({ message: 'ID inválido' });
         }
 
-        if (await verificarExistencia('nombre', nombre, prisma)) {
+        // Verificar existencia solo si el campo está presente
+        if (nombre && await verificarExistencia('nombre', nombre, prisma)) {
             return res.status(400).json({ message: 'El nombre ya está registrado.' });
         }
 
-        if (await verificarExistencia('username', username, prisma)) {
+        if (username && await verificarExistencia('username', username, prisma)) {
             return res.status(400).json({ message: 'El nombre de usuario ya está registrado.' });
         }
 
-        if (await verificarExistencia('email', email, prisma)) {
+        if (email && await verificarExistencia('email', email, prisma)) {
             return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
         }
 
@@ -135,6 +136,7 @@ export const actualizarUsuario = async (req: Request, res: Response, next: NextF
             data: transformToUid(usuarioActualizado) // Cambiar id a uid
         });
     } catch (error) {
+        console.error(error);
         res.status(500).send({
             message: 'Ocurrió un error'
         });
