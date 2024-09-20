@@ -21,7 +21,7 @@ router.put('/:id', [
 ], validarCampos, categoriaController.actualizarCategoria);
 
 router.delete('/:id', categoriaController.eliminarCategoria);
-router.put('/:id', categoriaController.activarCategoria);
-router.put('/:id', categoriaController.desactivarCategoria);
+router.put('/:id/activar', categoriaController.activarCategoria);
+router.put('/:id/desactivar', categoriaController.desactivarCategoria);
 
 export default router;
