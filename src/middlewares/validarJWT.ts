@@ -39,9 +39,7 @@ export const validarJWT = async (req: CustomRequest, res: Response, next: NextFu
         });
 
         // Verificar si el usuario existe y si está activo (estado = 1)
-        if (!user || user.estado !== 1 
-            || user.eliminado !== "NO"
-        ) {
+        if (!user || user.estado !== 1 || user.eliminado !== "NO") {
             return res.status(401).json({
                 ok: false,
                 msg: 'Usuario no autorizado o inactivo'
