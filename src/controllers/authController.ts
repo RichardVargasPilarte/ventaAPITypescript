@@ -23,6 +23,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             });
         }
 
+        // Verificar estado del usuario
+        if (usuarioDB.estado !== 1) {
+            return res.status(403).json({
+                msg: 'Usuario deshabilitado. Contacte al administrador'
+            });
+        }
+
         // Verificar password
         const validPassword = bcrypt.compareSync(password, usuarioDB.password);
         if (!validPassword) {
@@ -38,7 +45,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             token
         });
     } catch (error) {
-        console.error(error);
+        console.error('Error en login:', error);
         res.status(500).json({
             message: 'Error inesperado'
         });
