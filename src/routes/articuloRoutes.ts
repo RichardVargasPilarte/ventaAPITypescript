@@ -31,7 +31,7 @@ router.put('/:id', [
 ], validarCampos, articuloController.actualizarArticulo);
 
 router.delete('/:id', articuloController.eliminarArticulo);
-router.put('/:id', articuloController.activarArticulo);
-router.put('/:id', articuloController.desactivarArticulo);
+router.put('/:id/activar', articuloController.activarArticulo);
+router.put('/:id/desactivar', articuloController.desactivarArticulo);
 
 export default router;
