@@ -52,6 +52,11 @@ export const actualizarEstadoUsuario = async (usuarioId: string, estado: number,
             where: { id: usuarioId },
             data: { estado }
         });
+
+        if (!usuario) {
+            throw new Error('El usuario no existe o no se pudo actualizar');
+        }
+        
         return transformToUid(usuario); // Se llama a la función transformar `id` a `uid`
     } catch (error) {
         throw new Error('Ocurrió un error al actualizar el estado del usuario');
