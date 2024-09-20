@@ -36,7 +36,7 @@ router.put('/:id', [
 
 ], validarCampos, usuarioController.actualizarUsuario);
 router.delete('/:id', usuarioController.eliminarUsuario);
-router.put('/:id', usuarioController.activarUsuario);
-router.put('/:id', usuarioController.desactivarUsuario);
+router.put('/:id/activar', usuarioController.activarUsuario);
+router.put('/:id/desactivar', usuarioController.desactivarUsuario);
 
 export default router;
