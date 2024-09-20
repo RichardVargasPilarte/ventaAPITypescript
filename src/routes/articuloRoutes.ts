@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as articuloController from '../controllers/articuloController';
 import { body } from 'express-validator';
 
-import { validarCampos } from '../middlewares/validarCampos ';
+import { validarCampos } from '../middlewares/validarCampos';
 
 const router = Router();
 
