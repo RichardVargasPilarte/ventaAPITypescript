@@ -8,9 +8,9 @@ import { generarJWT } from '../utils/jwt';
 const usuarioClient = new PrismaClient().usuario;
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
-    
+
     const { username, password } = req.body;
-    
+
     try {
         const usuarioDB = await usuarioClient.findUnique({
             where: { username }
@@ -24,7 +24,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         }
 
         // Verificar estado del usuario
-        if (usuarioDB.estado !== 1) {
+        if (usuarioDB.estado !== 1 || usuarioDB.eliminado !== "NO") {
             return res.status(403).json({
                 msg: 'Usuario deshabilitado. Contacte al administrador'
             });
@@ -78,7 +78,7 @@ export const renewToken = async (req: Request, res: Response, next: NextFunction
         // Generar un nuevo token de JWT
         const token = await generarJWT(uid);
 
-        
+
 
         res.status(200).json({
             token,
