@@ -192,6 +192,10 @@ export const desactivarUsuario = async (req: Request, res: Response, next: NextF
     try {
         const usuarioId = req.params.id;
 
+        if (!isUUID(usuarioId)) {
+            return res.status(400).json({ message: 'ID de usuario no válido' });
+        }
+
         const usuario = await actualizarEstadoUsuario(usuarioId, 0, prisma);
 
         res.status(200).json({ data: usuario });
