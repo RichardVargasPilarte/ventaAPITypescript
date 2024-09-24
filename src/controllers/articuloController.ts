@@ -6,20 +6,54 @@ const articuloClient = new PrismaClient().articulo;
 
 export const obtenerArticulos = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        
+
+        // Obtener los parámetros de búsqueda y paginación de la consulta
+        const { nombre, categoria, descripcion, page = 1, limit = 10 } = req.query;
+
+        // Convertir `page` y `limit` a números
+        const pageNumber = Number(page);
+        const limitNumber = Number(limit);
+
+        // Calcular el desplazamiento (skip) para la paginación
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // Asegurarse de que las consultas sean cadenas de texto
+        const nombreQuery = nombre ? String(nombre) : undefined;
+        const categoriaQuery = categoria ? String(categoria) : undefined;
+        const descripcionQuery = descripcion ? String(descripcion) : undefined;
+
         const articulos = await articuloClient.findMany({
             where: {
-                eliminado: 'NO'
+                eliminado: 'NO',
+                ...(nombreQuery && { nombre: { contains: nombreQuery, mode: 'insensitive' } }), // Búsqueda por nombre
+                ...(categoriaQuery && { categoria: { nombre: { contains: categoriaQuery, mode: 'insensitive' } } }), // Búsqueda por categoría
+                ...(descripcionQuery && { descripcion: { contains: descripcionQuery, mode: 'insensitive' } }) // Búsqueda por descripción
             },
             include: {
                 categoria: { select: { nombre: true } }
             },
             orderBy: {
                 createdAt: 'desc'
-            }
-        })
+            },
+            skip: skip,
+            take: limitNumber
+        });
 
-        res.status(200).json({ data: articulos });
+        // Contar el número total de artículos para la paginación
+        const totalArticulos = await articuloClient.count({
+            where: {
+                ...(nombreQuery && { nombre: { contains: nombreQuery, mode: 'insensitive' } }), 
+                ...(categoriaQuery && { categoria: { nombre: { contains: categoriaQuery, mode: 'insensitive' } } }), 
+                ...(descripcionQuery && { descripcion: { contains: descripcionQuery, mode: 'insensitive' } }) 
+            }
+        });
+
+        res.status(200).json({ 
+            data: articulos,
+            total: totalArticulos,
+            page: pageNumber,
+            totalPages: Math.ceil(totalArticulos / limitNumber)
+        });
     } catch (error) {
         res.status(500).send({
             message: 'Ocurrió un error'
