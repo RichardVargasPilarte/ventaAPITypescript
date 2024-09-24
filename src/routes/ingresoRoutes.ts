@@ -15,7 +15,8 @@ router.post('/', [
     body('impuesto').isFloat().withMessage('impuesto debe ser un número decimal'),
     body('total').isFloat().withMessage('total debe ser un número decimal'),
     body('detalles').isArray().withMessage('detalles debe ser un array de objetos'),
-    body('detalles.*.articulo').isString().withMessage('articulo en detalles debe ser una cadena de texto'),
+    body('detalles.*.articuloId') // Cambiado de articulo a articuloId
+        .isString().withMessage('articuloId en detalles debe ser una cadena de texto'),
     body('detalles.*.cantidad').isInt().withMessage('cantidad en detalles debe ser un número entero'),
     body('detalles.*.precio').isFloat().withMessage('precio en detalles debe ser un número decimal'),
 ], validarCampos, ingresoController.crearIngreso);

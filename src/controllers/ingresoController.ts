@@ -8,24 +8,42 @@ const prisma = new PrismaClient();
 
 export const obtenerIngresos = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const ingresos = await ingresoClient.findMany({
+        const ingresos = await prisma.ingreso.findMany({
             include: {
-                usuario: { select: { nombre: true } },
-                persona: { select: { nombre: true } }
+                usuario: {
+                    select: {
+                        nombre: true
+                    }
+                },
+                persona: {
+                    select: {
+                        nombre: true
+                    }
+                },
+                detalles: {
+                    include: {
+                        articulo: {
+                            select: {
+                                nombre: true
+                            }
+                        }
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc'
             }
-        })
+        });
 
         res.status(200).json({ data: ingresos });
     } catch (error) {
+        console.error(error); // Para facilitar el debug
         res.status(500).send({
             message: 'Ocurrió un error'
         });
         next(error);
     }
-}
+};
 
 export const obtenerIngresoId = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -39,7 +57,8 @@ export const obtenerIngresoId = async (req: Request, res: Response, next: NextFu
             where: { id: ingresoId },
             include: {
                 usuario: { select: { nombre: true } },
-                persona: { select: { nombre: true } }
+                persona: { select: { nombre: true } },
+                detalles: true
             }
         });
 
@@ -59,23 +78,37 @@ export const obtenerIngresoId = async (req: Request, res: Response, next: NextFu
 
 export const crearIngreso = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const { usuarioId, personaId, tipo_comprobante, serie_comprobante, num_comprobante, impuesto, total, detalles } = req.body;
+
+        // Crear el ingreso
         const ingreso = await ingresoClient.create({
             data: {
-                ...req.body,
+                usuarioId,
+                personaId,
+                tipo_comprobante,
+                serie_comprobante,
+                num_comprobante,
+                impuesto,
+                total,
                 detalles: {
-                    create: req.body.detalles,
+                    create: detalles.map((detalle: any) => ({
+                        articuloId: detalle.articuloId,
+                        cantidad: detalle.cantidad,
+                        precio: detalle.precio
+                    }))
                 },
             },
+            include: { detalles: true }
         });
 
-        // Actualizar stock de cada artículo en los detalles
-        const detalles = req.body.detalles;
+        // Aumentar el stock de cada artículo en los detalles
         for (const detalle of detalles) {
-            await aumentarStock(detalle.articulo_id, detalle.cantidad);
+            await aumentarStock(detalle.articuloId, detalle.cantidad); // Usar articuloId aquí
         }
 
         res.status(201).json({ data: ingreso });
     } catch (error) {
+        console.error(error); // Para ver el error en la consola
         res.status(500).send({
             message: 'Ocurrió un error'
         });
@@ -100,9 +133,8 @@ export const activarIngreso = async (req: Request, res: Response, next: NextFunc
         });
 
         // Actualizar stock de cada artículo en los detalles del ingreso
-        const detalles = ingreso.detalles;
-        for (const detalle of detalles) {
-            await aumentarStock(detalle.articulo, detalle.cantidad);
+        for (const detalle of ingreso.detalles) {
+            await aumentarStock(detalle.articuloId, detalle.cantidad);
         }
 
         res.status(200).json({ data: ingreso })
@@ -130,9 +162,8 @@ export const desactivarIngreso = async (req: Request, res: Response, next: NextF
         });
 
         // Disminuir stock de cada artículo en los detalles del ingreso
-        const detalles = ingreso.detalles;
-        for (const detalle of detalles) {
-            await disminuirStock(detalle.articulo, detalle.cantidad);
+        for (const detalle of ingreso.detalles) {
+            await disminuirStock(detalle.articuloId, detalle.cantidad);
         }
 
         res.status(200).json({ data: ingreso })
