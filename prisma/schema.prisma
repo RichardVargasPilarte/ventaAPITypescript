@@ -27,6 +27,7 @@ model Articulo {
   eliminado    String    @default("NO")
 
   @@map("articulo")
+  DetalleIngreso DetalleIngreso[]
 }
 
 model Categoria {
@@ -101,14 +102,16 @@ model Ingreso {
 
 model DetalleIngreso {
   id        String  @id @default(uuid())
-  articulo  String  // ID o descripción del artículo
+  articuloId  String  // ID del artículo
+  articulo   Articulo @relation(fields: [articuloId], references: [id]) // Relación
   cantidad  Int
   precio    Float
   ingresoId String  // Llave foránea que referencia a Ingreso
-  ingreso   Ingreso @relation(fields: [ingresoId], references: [id]) // Relación inversa con Ingreso
+  ingreso   Ingreso @relation(fields: [ingresoId], references: [id]) // Relación
 
-  @@map("detalle_ingreso") // Mapeo del modelo a la tabla 'detalle_ingreso'
+  @@map("detalle_ingreso")
 }
+
 
 model Venta {
   id                String          @id @default(uuid())
