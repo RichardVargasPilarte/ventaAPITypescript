@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { validate as isUUID } from 'uuid';
 
 const articuloClient = new PrismaClient().articulo;
@@ -7,28 +7,58 @@ const articuloClient = new PrismaClient().articulo;
 export const obtenerArticulos = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
-        // Obtener los parámetros de búsqueda y paginación de la consulta
-        const { nombre, categoria, descripcion, page = 1, limit = 10 } = req.query;
+        // Condiciones de búsqueda
+        const filters: Prisma.ArticuloWhereInput = {
+            eliminado: 'NO',
+        };
 
-        // Convertir `page` y `limit` a números
-        const pageNumber = Number(page);
-        const limitNumber = Number(limit);
+        if (req.query.nombre) {
+            filters.nombre = {
+                contains: String(req.query.nombre),
+                mode: 'insensitive',
+            };
+        }
 
-        // Calcular el desplazamiento (skip) para la paginación
-        const skip = (pageNumber - 1) * limitNumber;
+        if (req.query.categoria) {
+            filters.categoria = {
+                nombre: {
+                    contains: String(req.query.categoria),
+                    mode: 'insensitive',
+                },
+            };
+        }
 
-        // Asegurarse de que las consultas sean cadenas de texto
-        const nombreQuery = nombre ? String(nombre) : undefined;
-        const categoriaQuery = categoria ? String(categoria) : undefined;
-        const descripcionQuery = descripcion ? String(descripcion) : undefined;
+        if (req.query.descripcion) {
+            filters.descripcion = {
+                contains: String(req.query.descripcion),
+                mode: 'insensitive',
+            };
+        }
 
+        // Paginación
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // Contar el total de artículos con los filtros aplicados
+        const totalArticulos = await articuloClient.count({
+            where: filters,
+        });
+
+        // Calcular el número total de páginas
+        const totalPages = Math.ceil(totalArticulos / limit);
+
+        // Verificar si la página solicitada existe
+        if (page > totalPages && totalPages > 0) {
+            return res.status(404).json({
+                ok: false,
+                message: `La página solicitada (${page}) no existe. Total de páginas: ${totalPages}.`
+            });
+        }
+
+        // Obtener los artículos con paginación y filtros
         const articulos = await articuloClient.findMany({
-            where: {
-                eliminado: 'NO',
-                ...(nombreQuery && { nombre: { contains: nombreQuery, mode: 'insensitive' } }), // Búsqueda por nombre
-                ...(categoriaQuery && { categoria: { nombre: { contains: categoriaQuery, mode: 'insensitive' } } }), // Búsqueda por categoría
-                ...(descripcionQuery && { descripcion: { contains: descripcionQuery, mode: 'insensitive' } }) // Búsqueda por descripción
-            },
+            where: filters,
             include: {
                 categoria: { select: { nombre: true } }
             },
@@ -36,23 +66,14 @@ export const obtenerArticulos = async (req: Request, res: Response, next: NextFu
                 createdAt: 'desc'
             },
             skip: skip,
-            take: limitNumber
+            take: limit,
         });
 
-        // Contar el número total de artículos para la paginación
-        const totalArticulos = await articuloClient.count({
-            where: {
-                ...(nombreQuery && { nombre: { contains: nombreQuery, mode: 'insensitive' } }), 
-                ...(categoriaQuery && { categoria: { nombre: { contains: categoriaQuery, mode: 'insensitive' } } }), 
-                ...(descripcionQuery && { descripcion: { contains: descripcionQuery, mode: 'insensitive' } }) 
-            }
-        });
-
-        res.status(200).json({ 
+        res.status(200).json({
             data: articulos,
             total: totalArticulos,
-            page: pageNumber,
-            totalPages: Math.ceil(totalArticulos / limitNumber)
+            page: page,
+            totalPages: totalPages
         });
     } catch (error) {
         res.status(500).send({
@@ -60,7 +81,8 @@ export const obtenerArticulos = async (req: Request, res: Response, next: NextFu
         });
         next(error);
     }
-}
+};
+
 
 export const obtenerArticuloId = async (req: Request, res: Response, next: NextFunction) => {
     try {
