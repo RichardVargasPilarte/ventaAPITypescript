@@ -13,7 +13,7 @@ interface CustomRequest extends Request {
 
 // Middleware para validar JWT
 export const validarJWT = async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const token = req.header('x-token'); // Obtenemos el token del encabezado
+    const token = req.header('x-token');
 
     // Verificamos si el token existe
     if (!token) {
@@ -30,14 +30,14 @@ export const validarJWT = async (req: CustomRequest, res: Response, next: NextFu
         const userInfo = jwt.verify(token, process.env.JWT_SECRET as string) as any;
 
         // Almacenamos la información del usuario en el objeto `req`
-        req.uid = userInfo.uid;
+        req.uid = userInfo.id;
         req.rol = userInfo.rol;
         req.userInfo = userInfo;
 
-        // Verificamos si el usuario existe en la base de datos
+        // Verificamos si el usuario existe en la base de datos usando el campo `id`
         const user = await prisma.usuario.findUnique({
             where: {
-                id: userInfo.uid
+                id: req.uid // Aquí se busca por el campo id
             }
         });
 
@@ -52,10 +52,11 @@ export const validarJWT = async (req: CustomRequest, res: Response, next: NextFu
         // Si todo está bien, llamamos a `next()` para continuar con la siguiente función middleware
         next();
     } catch (error) {
-        // Si el token no es válido, devolvemos una respuesta de error
+        console.error('Error en la verificación del token:', error);
         return res.status(401).json({
             ok: false,
             msg: 'Token no válido'
         });
     }
 };
+
