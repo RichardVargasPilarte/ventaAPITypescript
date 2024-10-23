@@ -2,13 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { validarJWT } from './validarJWT';
 
 interface CustomRequest extends Request {
-    uid: string;
-    rol: string;
+    uid?: string;
+    rol?: string;
 }
 
 export const verificarUsuario = async (req: CustomRequest, res: Response, next: NextFunction) => {
     await validarJWT(req, res, async () => {
-        const { rol } = req; // Supongamos que el rol viene con la información del usuario
+        const { rol } = req;
 
         if (rol === 'Administrador' || rol === 'Vendedor' || rol === 'Bodeguero') {
             next();
