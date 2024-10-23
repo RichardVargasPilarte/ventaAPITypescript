@@ -11,7 +11,14 @@ export const obtenerventas = async (req: Request, res: Response, next: NextFunct
         const ventas = await ventaClient.findMany({
             include: {
                 usuario: { select: { nombre: true } },
-                persona: { select: { nombre: true } }
+                persona: { select: { nombre: true } },
+                detalles: {
+                    include: {
+                        articulo: {
+                            select: { nombre: true }
+                        }
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc'
@@ -39,7 +46,8 @@ export const obtenerVentaId = async (req: Request, res: Response, next: NextFunc
             where: { id: ventaId },
             include: {
                 usuario: { select: { nombre: true } },
-                persona: { select: { nombre: true } }
+                persona: { select: { nombre: true } },
+                detalles: true
             }
         });
 
@@ -56,15 +64,26 @@ export const obtenerVentaId = async (req: Request, res: Response, next: NextFunc
     }
 }
 
-export const crearIngreso = async (req: Request, res: Response, next: NextFunction) => {
+export const crearVenta = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { detalles, ...ventaData } = req.body;
+        const { usuarioId, personaId, tipo_comprobante, serie_comprobante, num_comprobante, impuesto, total, detalles } = req.body;
 
         const venta = await ventaClient.create({
             data: {
-                ...ventaData,
+                usuarioId,
+                personaId,
+                tipo_comprobante,
+                serie_comprobante,
+                num_comprobante,
+                impuesto,
+                total,
                 detalles: {
-                    create: detalles,
+                    create: detalles.map((detalle: any) => ({
+                        articuloId: detalle.articuloId,
+                        cantidad: detalle.cantidad,
+                        precio: detalle.precio,
+                        descuento: detalle.descuento
+                    }))
                 },
             },
         });
@@ -101,7 +120,7 @@ export const activarVenta = async (req: Request, res: Response, next: NextFuncti
 
         // Actualizar stock
         for (const detalle of venta.detalles) {
-            await disminuirStock(detalle.articulo, detalle.cantidad);
+            await disminuirStock(detalle.articuloId, detalle.cantidad);
         }
 
         res.status(200).json({ data: venta })
@@ -131,7 +150,7 @@ export const desactivarVenta = async (req: Request, res: Response, next: NextFun
 
         const detalles = venta.detalles;
         for (const detalle of detalles) {
-            await disminuirStock(detalle.articulo, detalle.cantidad);
+            await disminuirStock(detalle.articuloId, detalle.cantidad);
         }
 
         res.status(200).json({ data: venta })

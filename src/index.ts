@@ -7,6 +7,7 @@ import articuloRoutes from './routes/articuloRoutes';
 import categoriaRoutes from './routes/categoriaRoutes';
 import personaRoutes from './routes/personaRoutes';
 import ingresoRoutes from './routes/ingresoRoutes';
+import ventaRoutes from './routes/ventaRoutes';
 import loginRoutes from './routes/loginRoutes'
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use('/api/articulo', articuloRoutes);
 app.use('/api/categoria', categoriaRoutes);
 app.use('/api/persona', personaRoutes);
 app.use('/api/ingreso', ingresoRoutes);
+app.use('/api/venta', ventaRoutes);
 app.use('/api/login', loginRoutes);
 
 app.listen(process.env.APP_PORT || 3000, () => {
