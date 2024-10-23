@@ -28,6 +28,7 @@ model Articulo {
 
   @@map("articulo")
   DetalleIngreso DetalleIngreso[]
+  DetalleVenta DetalleVenta[]
 }
 
 model Categoria {
@@ -133,12 +134,13 @@ model Venta {
 
 model DetalleVenta {
   id          String  @id @default(uuid())
-  articulo    String  @db.VarChar(255)
+  articuloId  String  // ID del artículo
+  articulo    Articulo @relation(fields: [articuloId], references: [id])
   cantidad    Int
   precio      Float
   descuento   Float
-  ventaId     String                          // Llave foránea que referencia a Venta
-  venta       Venta                           @relation(fields: [ventaId], references: [id]) // Relación con Venta
+  ventaId     String // Llave foránea que referencia a Venta
+  venta       Venta @relation(fields: [ventaId], references: [id]) // Relación con Venta
 
   @@map("detalle_venta") // Mapeo del modelo a la tabla 'detalle_venta'
 }
