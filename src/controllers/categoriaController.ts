@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { validate as isUUID } from 'uuid';
 
 const categoriaClient = new PrismaClient().categoria;
@@ -7,15 +7,60 @@ const categoriaClient = new PrismaClient().categoria;
 export const obtenerCategorias = async (req: Request, res: Response, next: NextFunction) => {
     try {
 
+        // Condiciones de búsqueda
+        const filters: Prisma.CategoriaWhereInput = {
+            eliminado: 'NO',
+        };
+
+        if (req.query.nombre) {
+            filters.nombre = {
+                contains: String(req.query.nombre),
+                mode: 'insensitive',
+            };
+        }
+
+        if (req.query.descripcion) {
+            filters.descripcion = {
+                contains: String(req.query.descripcion),
+                mode: 'insensitive',
+            };
+        }
+
+        // Paginación
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // Contar el total de artículos con los filtros aplicados
+        const totalArticulos = await categoriaClient.count({
+            where: filters,
+        });
+
+        // Calcular el número total de páginas
+        const totalPages = Math.ceil(totalArticulos / limit);
+
+        // Verificar si la página solicitada existe
+        if (page > totalPages && totalPages > 0) {
+            return res.status(404).json({
+                ok: false,
+                message: `La página solicitada (${page}) no existe. Total de páginas: ${totalPages}.`
+            });
+        }
+
         const categorias = await categoriaClient.findMany({
-            where: {
-                eliminado: 'NO'
-            },
+            where: filters,
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip: skip,
+            take: limit,
         })
-        res.status(200).json({ data: categorias });
+        res.status(200).json({
+            data: categorias,
+            total: totalArticulos,
+            page: page,
+            totalPages: totalPages
+        });
     } catch (error) {
         res.status(500).send({
             message: 'Ocurrió un error'
@@ -178,9 +223,9 @@ export const desactivarCategoria = async (req: Request, res: Response, next: Nex
 
         res.status(200).json({ data: categoria })
     } catch (error) {
-       res.status(500).send({
+        res.status(500).send({
             message: 'Ocurrió un error'
         });
-        next(error); 
+        next(error);
     }
 }
